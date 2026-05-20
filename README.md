@@ -1,4 +1,4 @@
-# NetViewer — ESP32 Wireless Utility Console
+# NetViewer — ESP32 Wireless Utility Console and Proto-Penetration Tool
 
 NetViewer is a minimal handheld wireless utility console built around the **ESP32-WROOM-DA**, a **2.4-inch SSD1309 I2C OLED display**, and **three push buttons**. The project focuses heavily on **Wi-Fi tools**, **BLE tools**, and **local web/server utilities**, while keeping the hardware simple and portable.
 
