@@ -177,15 +177,27 @@ Do not use it for unauthorized access, credential capture, phishing, deauthentic
 
 ## Project Status
 
-Current status: **Merged firmware prototype working**
+Current status: **Finished and fully functional**
 
-The project now includes all four locked menu groups in one firmware:
+NetViewer has reached a complete working version. The final firmware merges all four planned menu groups into one stable handheld interface:
 
-```text
 Wi-Fi Tools
 BLE Tools
 Web Server
 Device Utility
+
+The project now includes a working SSD1309 portrait OLED interface, a Wi-Fi splash screen, stable three-button navigation, submenu BACK options, and fully integrated Wi-Fi, BLE, web/server, and device utility modes. The final hardware mapping uses GPIO32 for UP, GPIO26 for DOWN, and GPIO27 for MENU/SELECT after testing showed GPIO32 was more reliable during Wi-Fi activity.
+
+The Wi-Fi tools support scanning, channel analysis, signal viewing, open network detection, AP mode, network tests, HTTP testing, and a visualizer mode. The BLE tools support scanning, proximity monitoring, beacon detection, signal tracking, service viewing, advertising, and BLE UART. The web/server tools provide a local dashboard, info page, captive-style page, control panel, and live monitor. The utility menu provides device status and basic OLED settings.
+
+This version is ready to be documented, demonstrated, and used as a portfolio-ready embedded wireless utility project.
 ```
 
 Future improvements may include saved settings, better BLE service discovery, true WebSocket support, scan history, and data export.
+
+Contributors
+Victor Stafussi Granado – Embedded Systems Design, Firmware Development, System Integration
+
+License
+This project is licensed under the MIT License.
+See the LICENSE file for details.
