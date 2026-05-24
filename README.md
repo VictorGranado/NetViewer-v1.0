@@ -961,4 +961,3 @@ Copyright (c) 2026 Victor Granado
 Current status: **Firmware framework started**
 
 The first version includes the complete menu structure and starter implementations for all locked modes. The next step is to compile the firmware on the target ESP32 setup, fix any library-specific compile issues, and then refine each mode into a polished final feature.
-
