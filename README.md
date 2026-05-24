@@ -191,11 +191,10 @@ The project now includes a working SSD1309 portrait OLED interface, a Wi-Fi spla
 The Wi-Fi tools support scanning, channel analysis, signal viewing, open network detection, AP mode, network tests, HTTP testing, and a visualizer mode. The BLE tools support scanning, proximity monitoring, beacon detection, signal tracking, service viewing, advertising, and BLE UART. The web/server tools provide a local dashboard, info page, captive-style page, control panel, and live monitor. The utility menu provides device status and basic OLED settings.
 
 
-Future improvements may include saved settings, better BLE service discovery, true WebSocket support, scan history, and data export.
 
-Contributors
+##Contributors
 Victor Stafussi Granado – Embedded Systems Design, Firmware Development, System Integration
 
-License
+##License
 This project is licensed under the MIT License.
 See the LICENSE file for details.
