@@ -28,6 +28,8 @@ NetViewer is a minimal handheld wireless utility console built with an **ESP32-W
 | 3 Push Buttons | Up, Down, Menu/Select |
 | Power Circuit | Battery/regulator/switch circuit for portable use |
 
+![ALT text](https://github.com/VictorGranado/NetViewer-v1.0/blob/c68e19511f223035445f3363eb8d28d9b7c355c9/WhatsApp%20Image%202026-05-24%20at%2019.28.02%20(2).jpeg)
+
 ---
 
 ## Pin Mapping
