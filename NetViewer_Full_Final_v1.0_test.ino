@@ -30,6 +30,7 @@
 #include <DNSServer.h>
 #include <ESP32Ping.h>
 #include <U8g2lib.h>
+#include <Preferences.h>
 
 // Classic ESP32 BLE / Kolban style
 #include <BLEDevice.h>
@@ -57,10 +58,15 @@ U8G2_SSD1309_128X64_NONAME0_F_HW_I2C u8g2(U8G2_R1, U8X8_PIN_NONE);
 // --------------------------------------------------
 // Wi-Fi / Web settings
 // --------------------------------------------------
-// Scanner/AP/Web modes work with these blank.
-// Ping, Internet Check, HTTP Test, and Network Info need station credentials.
+// Optional fallback station Wi-Fi credentials.
+// Leave blank for normal use. Wi-Fi credentials can be entered from the web portal at /wifi.
 const char* STA_SSID = "";
 const char* STA_PASS = "";
+
+// Saved Wi-Fi credentials are stored in ESP32 flash using Preferences.
+Preferences prefs;
+String savedStaSSID = "";
+String savedStaPASS = "";
 
 const char* AP_SSID = "NetViewer_AP";
 const char* AP_PASS = "12345678";
@@ -799,6 +805,62 @@ String oledMessage = "Ready";
 bool testFlag = false;
 int controlCounter = 0;
 
+
+// --------------------------------------------------
+// Saved Wi-Fi credentials helpers
+// --------------------------------------------------
+void loadSavedWiFiCredentials() {
+  prefs.begin("wifi", true);
+  savedStaSSID = prefs.getString("ssid", "");
+  savedStaPASS = prefs.getString("pass", "");
+  prefs.end();
+}
+
+void saveWiFiCredentials(String ssid, String pass) {
+  prefs.begin("wifi", false);
+  prefs.putString("ssid", ssid);
+  prefs.putString("pass", pass);
+  prefs.end();
+
+  savedStaSSID = ssid;
+  savedStaPASS = pass;
+}
+
+void clearWiFiCredentials() {
+  prefs.begin("wifi", false);
+  prefs.remove("ssid");
+  prefs.remove("pass");
+  prefs.end();
+
+  savedStaSSID = "";
+  savedStaPASS = "";
+}
+
+String activeStaSSID() {
+  if (savedStaSSID.length() > 0) {
+    return savedStaSSID;
+  }
+
+  return String(STA_SSID);
+}
+
+String activeStaPASS() {
+  if (savedStaSSID.length() > 0) {
+    return savedStaPASS;
+  }
+
+  return String(STA_PASS);
+}
+
+String htmlEscape(String s) {
+  s.replace("&", "&amp;");
+  s.replace("<", "&lt;");
+  s.replace(">", "&gt;");
+  s.replace("\"", "&quot;");
+  s.replace("'", "&#39;");
+  return s;
+}
+
 String htmlHeader(String title) {
   String html;
   html += "<!DOCTYPE html><html><head>";
@@ -814,7 +876,7 @@ String htmlHeader(String title) {
 }
 
 String navLinks() {
-  return "<p><a href='/'>Dashboard</a><a href='/control'>Control</a><a href='/live'>Live</a><a href='/info'>Info</a><a href='/status'>JSON</a></p>";
+  return "<p><a href='/'>Dashboard</a><a href='/wifi'>Wi-Fi Setup</a><a href='/control'>Control</a><a href='/live'>Live</a><a href='/info'>Info</a><a href='/status'>JSON</a></p>";
 }
 
 String htmlFooter() {
@@ -833,6 +895,9 @@ String statusJSON() {
   json += "\"apIP\":\"" + WiFi.softAPIP().toString() + "\",";
   json += "\"testFlag\":" + String(testFlag ? "true" : "false") + ",";
   json += "\"counter\":" + String(controlCounter) + ",";
+  json += "\"staConnected\":" + String(WiFi.status() == WL_CONNECTED ? "true" : "false") + ",";
+  json += "\"staSSID\":\"" + activeStaSSID() + "\",";
+  json += "\"staIP\":\"" + WiFi.localIP().toString() + "\",";
   json += "\"oledMessage\":\"" + oledMessage + "\"";
   json += "}";
   return json;
@@ -844,6 +909,9 @@ void handleRoot() {
   html += "<div class='card'><h2>Server Dashboard</h2><table>";
   html += "<tr><td>AP SSID</td><td>" + String(AP_SSID) + "</td></tr>";
   html += "<tr><td>AP IP</td><td>" + WiFi.softAPIP().toString() + "</td></tr>";
+  html += "<tr><td>STA Wi-Fi</td><td>" + String(WiFi.status() == WL_CONNECTED ? "Connected" : "Not connected") + "</td></tr>";
+  html += "<tr><td>STA SSID</td><td>" + htmlEscape(activeStaSSID()) + "</td></tr>";
+  html += "<tr><td>STA IP</td><td>" + WiFi.localIP().toString() + "</td></tr>";
   html += "<tr><td>Uptime</td><td>" + String(millis() / 1000) + " sec</td></tr>";
   html += "<tr><td>Free Heap</td><td>" + String(ESP.getFreeHeap()) + " bytes</td></tr>";
   html += "<tr><td>Clients</td><td>" + String(WiFi.softAPgetStationNum()) + "</td></tr>";
@@ -865,6 +933,77 @@ void handleInfo() {
   html += "</b>, then open <b>192.168.4.1</b>.</p></div>";
   html += htmlFooter();
   server.send(200, "text/html", html);
+}
+
+void handleWiFiSetup() {
+  String html = htmlHeader("NetViewer Wi-Fi Setup");
+  html += navLinks();
+
+  html += "<div class='card'><h2>Wi-Fi Setup</h2>";
+  html += "<p>Enter local 2.4 GHz Wi-Fi credentials here. The ESP32 will save them to flash memory and restart.</p>";
+  html += "<form action='/savewifi' method='POST'>";
+  html += "<label>SSID</label><br>";
+  html += "<input name='ssid' value='" + htmlEscape(activeStaSSID()) + "' style='width:95%;padding:10px;margin:6px 0;'><br>";
+  html += "<label>Password</label><br>";
+  html += "<input name='pass' type='password' style='width:95%;padding:10px;margin:6px 0;'><br>";
+  html += "<button type='submit'>Save Wi-Fi and Restart</button>";
+  html += "</form>";
+  html += "</div>";
+
+  html += "<div class='card'><h2>Current STA Status</h2><table>";
+  html += "<tr><td>Status</td><td>" + String(WiFi.status() == WL_CONNECTED ? "Connected" : "Not connected") + "</td></tr>";
+  html += "<tr><td>Saved SSID</td><td>" + htmlEscape(activeStaSSID()) + "</td></tr>";
+  html += "<tr><td>STA IP</td><td>" + WiFi.localIP().toString() + "</td></tr>";
+  String staRssiText = WiFi.status() == WL_CONNECTED ? String(WiFi.RSSI()) + " dBm" : "-";
+  html += "<tr><td>RSSI</td><td>" + staRssiText + "</td></tr>";
+  html += "</table>";
+  html += "<p><a href='/clearwifi'>Clear Saved Wi-Fi</a></p>";
+  html += "</div>";
+
+  html += htmlFooter();
+  server.send(200, "text/html", html);
+}
+
+void handleSaveWiFi() {
+  if (!server.hasArg("ssid")) {
+    server.send(400, "text/plain", "Missing SSID");
+    return;
+  }
+
+  String ssid = server.arg("ssid");
+  String pass = server.arg("pass");
+
+  ssid.trim();
+
+  if (ssid.length() == 0) {
+    server.send(400, "text/plain", "SSID cannot be blank");
+    return;
+  }
+
+  saveWiFiCredentials(ssid, pass);
+
+  String html = htmlHeader("Wi-Fi Saved");
+  html += "<div class='card'><h2>Wi-Fi Saved</h2>";
+  html += "<p>Saved SSID: <b>" + htmlEscape(ssid) + "</b></p>";
+  html += "<p>The ESP32 will restart and try to connect using the saved credentials.</p>";
+  html += "</div></body></html>";
+
+  server.send(200, "text/html", html);
+  delay(1200);
+  ESP.restart();
+}
+
+void handleClearWiFi() {
+  clearWiFiCredentials();
+
+  String html = htmlHeader("Wi-Fi Cleared");
+  html += "<div class='card'><h2>Saved Wi-Fi Cleared</h2>";
+  html += "<p>The ESP32 will restart. You can reconnect to NetViewer_AP and enter new credentials.</p>";
+  html += "</div></body></html>";
+
+  server.send(200, "text/html", html);
+  delay(1200);
+  ESP.restart();
 }
 
 void handleControlPanel() {
@@ -925,6 +1064,9 @@ void startWebServer() {
 
   server.on("/", handleRoot);
   server.on("/info", handleInfo);
+  server.on("/wifi", handleWiFiSetup);
+  server.on("/savewifi", HTTP_POST, handleSaveWiFi);
+  server.on("/clearwifi", handleClearWiFi);
   server.on("/control", handleControlPanel);
   server.on("/live", handleLiveMonitor);
   server.on("/status", handleStatus);
@@ -1986,9 +2128,16 @@ void handleButtons() {
 // Background services
 // --------------------------------------------------
 void connectToStationIfConfigured() {
-  if (String(STA_SSID).length() == 0) return;
+  loadSavedWiFiCredentials();
 
-  showMessage("STA WiFi", "Connecting", STA_SSID);
+  String ssid = activeStaSSID();
+  String pass = activeStaPASS();
+
+  if (ssid.length() == 0) {
+    return;
+  }
+
+  showMessage("STA WiFi", "Connecting", ssid.c_str());
 
   WiFi.persistent(false);
   WiFi.setSleep(false);
@@ -1996,7 +2145,7 @@ void connectToStationIfConfigured() {
   WiFi.disconnect(true, true);
   delay(500);
 
-  WiFi.begin(STA_SSID, STA_PASS);
+  WiFi.begin(ssid.c_str(), pass.c_str());
   unsigned long start = millis();
 
   while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
@@ -2005,7 +2154,7 @@ void connectToStationIfConfigured() {
     drawHeader("STA WiFi");
     u8g2.setFont(u8g2_font_5x7_tf);
     u8g2.drawStr(0, 28, "Connecting...");
-    u8g2.drawStr(0, 44, fitText(String(STA_SSID), 12).c_str());
+    u8g2.drawStr(0, 44, fitText(ssid, 12).c_str());
     u8g2.drawStr(0, 62, ("Status:" + String(WiFi.status())).c_str());
     u8g2.drawStr(0, 80, ("Time:" + String((millis() - start) / 1000) + "s").c_str());
     drawFooter("wait...");
@@ -2026,7 +2175,8 @@ void connectToStationIfConfigured() {
   } else {
     u8g2.drawStr(0, 22, "STA Failed");
     u8g2.drawStr(0, 40, ("Code:" + String(WiFi.status())).c_str());
-    u8g2.drawStr(0, 58, "Scan/AP ok");
+    u8g2.drawStr(0, 58, "Use portal");
+    u8g2.drawStr(0, 72, "/wifi setup");
     WiFi.mode(WIFI_AP_STA);
   }
 
