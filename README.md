@@ -62,6 +62,7 @@ Install these in Arduino IDE:
 | esp32 by Espressif Systems | ESP32 board support, Wi-Fi, BLE, WebServer |
 | U8g2 by Oliver Kraus | SSD1309 OLED graphics |
 | ESP32Ping | Ping and internet connection testing |
+| Preferences | Built-in ESP32 storage for saved Wi-Fi credentials |
 
 Do **not** install the old external `ESP32_BLE_Arduino` library. Use the BLE library included with the ESP32 board package.
 
@@ -130,6 +131,22 @@ Password: 12345678
 IP: 192.168.4.1
 ```
 
+### Wi-Fi Credential Setup Portal
+
+NetViewer now includes a Wi-Fi setup page so credentials do not need to be hardcoded and reflashed every time the device is used in a new location.
+
+To configure Wi-Fi:
+
+```text
+1. Connect phone/laptop to NetViewer_AP
+2. Open 192.168.4.1/wifi
+3. Enter the local Wi-Fi SSID and password
+4. Save credentials
+5. NetViewer reboots and attempts to connect automatically
+```
+
+Saved credentials are stored in ESP32 flash using `Preferences`. The same portal also includes an option to clear saved credentials.
+
 ---
 
 ## Device Utility
@@ -158,6 +175,7 @@ Recommended settings:
 
 - Wi-Fi scan, AP mode, BLE scan, and local web server features work without router credentials.
 - Ping, Internet Check, HTTP Test, and STA Network Info require the ESP32 to connect to a compatible 2.4 GHz Wi-Fi network.
+- Wi-Fi credentials can now be entered from the web portal at `192.168.4.1/wifi`, so the firmware does not need to be reflashed for each new network.
 - Open Wi-Fi networks work well for testing. Captive portal networks may connect but still block internet tests.
 - BLE modes use the classic ESP32 BLE library included with the ESP32 board package, not NimBLE.
 
@@ -190,13 +208,13 @@ Device Utility
 
 The project now includes a working SSD1309 portrait OLED interface, a Wi-Fi splash screen, stable three-button navigation, submenu BACK options, and fully integrated Wi-Fi, BLE, web/server, and device utility modes. The final hardware mapping uses GPIO32 for UP, GPIO26 for DOWN, and GPIO27 for MENU/SELECT after testing showed GPIO32 was more reliable during Wi-Fi activity.
 
-The Wi-Fi tools support scanning, channel analysis, signal viewing, open network detection, AP mode, network tests, HTTP testing, and a visualizer mode. The BLE tools support scanning, proximity monitoring, beacon detection, signal tracking, service viewing, advertising, and BLE UART. The web/server tools provide a local dashboard, info page, captive-style page, control panel, and live monitor. The utility menu provides device status and basic OLED settings.
+The Wi-Fi tools support scanning, channel analysis, signal viewing, open network detection, AP mode, network tests, HTTP testing, and a visualizer mode. The web/server tools now also include a Wi-Fi setup portal, allowing credentials to be entered from a phone or laptop and saved to ESP32 flash. The BLE tools support scanning, proximity monitoring, beacon detection, signal tracking, service viewing, advertising, and BLE UART. The utility menu provides device status and basic OLED settings.
 
 
 
-##Contributors
+## Contributors
 Victor Stafussi Granado – Embedded Systems Design, Firmware Development, System Integration
 
-##License
+## License
 This project is licensed under the MIT License.
 See the LICENSE file for details.
